@@ -11,12 +11,12 @@
 
 # AWS Private CA Issuer
 
-AWS ACM Private CA is a module of the AWS Certificate Manager that can setup and manage private CAs.
+AWS Private CA is an AWS service that can setup and manage private CAs, as well as issue private certificates.
 
 cert-manager is a Kubernetes add-on to automate the management and issuance of TLS certificates from various issuing sources.
-It will ensure certificates are valid and up to date periodically, and attempt to renew certificates at an appropriate time before expiry.
+It will ensure certificates are valid, updated periodically and attempt to renew certificates at an appropriate time before expiry.
 
-This project acts as an addon (see https://cert-manager.io/docs/configuration/external/) to cert-manager that signs off certificate requests using AWS PCA.
+This project acts as an addon (see https://cert-manager.io/docs/configuration/external/) to cert-manager that signs off certificate requests using AWS Private CA.
 
 ## Setup
 
@@ -31,14 +31,47 @@ helm install awspca/aws-privateca-issuer --generate-name
 
 You can check the chart configuration in the default [values](charts/aws-pca-issuer/values.yaml) file.
 
+**[AWS PCA Issuer supports ARM starting at version 1.3.0](https://github.com/cert-manager/aws-privateca-issuer/releases/tag/v1.3.0)**
 
+### Accessing the test ECR
+
+AWS PCA Issuer maintains a test ECR that contains versions that correspond to each commit on the main branch. These images can be accessed by setting the image repo to `public.ecr.aws/cert-manager-aws-privateca-issuer/cert-manager-aws-privateca-issuer-test` and the image tag to `latest`. An example of how this is done is shown below:
+
+```shell
+helm repo add awspca https://cert-manager.github.io/aws-privateca-issuer
+helm install awspca/aws-privateca-issuer --generate-name \
+--set image.repository=public.ecr.aws/cert-manager-aws-privateca-issuer/cert-manager-aws-privateca-issuer-test \
+--set image.tag=latest
+```
 ## Configuration
 
-As of now, the only configurable settings are access to AWS. So you can use `AWS_REGION`, `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY`.
+### AWS Authentication
 
-Alternatively, you can supply arbitrary secrets for the access and secret keys with the `accessKeyIDSelector` and `secretAccessKeySelector` fields in the clusterissuer and/or issuer manifests.
+You can configure AWS authentication in the following ways:
 
-Access to AWS can also be configured using an EC2 instance role or [IAM Roles for Service Accounts] (https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html).
+* Using environment variables: `AWS_REGION`, `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY`
+* Using Kubernetes secrets: Supply arbitrary secrets for the access and secret keys with the `accessKeyIDSelector` and `secretAccessKeySelector` fields in the issuer manifests
+* Using EC2 instance roles
+* Using [IAM Roles for Service Accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
+
+### Cross-Account Access
+
+AWS PCA Issuer supports assuming an IAM role per issuer to access AWS Private CAs in different AWS accounts. This is useful for multi-account architectures where Private CAs are hosted in separate accounts from the Kubernetes clusters.
+
+To use this feature, specify the IAM role ARN in the `role` field of your issuer:
+
+```yaml
+apiVersion: awspca.cert-manager.io/v1beta1
+kind: AWSPCAClusterIssuer
+metadata:
+  name: cross-account-issuer
+spec:
+  arn: arn:aws:acm-pca:us-west-2:123456789012:certificate-authority/12345678-1234-1234-1234-123456789012
+  region: us-west-2
+  role: arn:aws:iam::123456789012:role/pca-issuer-role
+```
+
+For more details on setting up cross-account access, see the [Multi-Account Setup Guide](docs/multi-account-setup.md).
 
 A minimal policy to use the issuer with an authority would look like follows:
 
@@ -64,7 +97,7 @@ A minimal policy to use the issuer with an authority would look like follows:
 
 This operator provides two custom resources that you can use.
 
-Examples can be found in the [examples](config/examples/) directory.
+Examples can be found in the [examples](config/examples/) and [samples](config/samples) directories.
 
 ### AWSPCAIssuer
 
@@ -74,6 +107,10 @@ This is a regular namespaced issuer that can be used as a reference in your Cert
 
 This CR is identical to the AWSPCAIssuer. The only difference being that it's not namespaced and can be referenced from anywhere.
 
+### Usage with cert-manager Ingress Annotations
+
+The `cert-manager.io/cluster-issuer` annotation cannot be used to point at a `AWSPCAClusterIssuer`. Instead, use `cert-manager.io/issuer:`. Please see [this issue](https://github.com/cert-manager/aws-privateca-issuer/issues/252) for more information.
+
 ### Disable Approval Check
 
 The AWSPCA Issuer will wait for CertificateRequests to have an [approved condition
@@ -81,6 +118,10 @@ set](https://cert-manager.io/docs/concepts/certificaterequest/#approval) before
 signing. If using an older version of cert-manager (pre v1.3), you can disable
 this check by supplying the command line flag `-disable-approved-check` to the
 Issuer Deployment.
+
+### Disable Kubernetes Client-Side Rate Limiting
+
+The AWSPCA Issuer will throttle the rate of requests to the kubernetes API server to 5 queries per second by [default](https://pkg.go.dev/k8s.io/client-go/rest#pkg-constants). This is not necessary for newer versions of Kubernetes that have implemented [API Priority and Fairness](https://kubernetes.io/docs/concepts/cluster-administration/flow-control/). If using a newer version of Kubernetes, you can disable this client-side rate limiting by supplying the command line flag `-disable-client-side-rate-limiting` to the Issuer Deployment.
 
 ### Authentication
 
@@ -159,7 +200,7 @@ Before running ```make cluster``` we will need to do the following:
 * [Golang v1.17+](https://golang.org/)
 * [Docker v17.03+](https://docs.docker.com/install/)
 * [Kind v0.9.0+](https://kind.sigs.k8s.io/docs/user/quick-start/) -> This will be installed via running the test
-* [Kubectl v1.11.3+](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+* [Kubectl v1.13+](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 * [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html)
 * [Helm](https://helm.sh/docs/intro/install/)
 * [Make](https://www.gnu.org/software/make/) Need to have version 3.82+
