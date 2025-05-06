@@ -9,7 +9,7 @@ on:
 
 env:
   AWS_CLI_ARCHITECTURE: ${{ inputs.architecture == 'arm64' && 'aarch64' || 'x86_64' }}
-  EC2_INSTANCE_TYPE: ${{ inputs.architecture == 'arm64' && 't4g.medium' || 't3.medium' }}
+  EC2_INSTANCE_TYPE: ${{ inputs.architecture == 'arm64' && 'c7gn.xlarge' || 'c7a.xlarge' }}
   GO_ARCHITECTURE: ${{ inputs.architecture == 'arm64' && 'arm64' || 'amd64' }}
   KUBECTL_ARCHITECTURE: $GO_ARCHITECTURE
 
@@ -26,7 +26,7 @@ jobs:
       - name: Setup AWS Credentials
         uses: aws-actions/configure-aws-credentials@master
         with:
-          role-to-assume: arn:aws:iam:::role/GithubActionsTestingRole-slimruu-us-east-1
+          role-to-assume: arn:aws:iam::284386129350:role/GithubActionsTestingRole-slimruu-us-east-1
           aws-region: us-east-1
       - name: Configure EC2 Runner Parameters
         run: |
@@ -83,7 +83,7 @@ jobs:
           mkdir /home/ec2-user/.cache/go-mod
           mkdir /home/ec2-user/go
           mkdir /home/ec2-user/go/bin
-          GOVERSION=go1.24.1
+          GOVERSION=go1.24.2
           wget https://go.dev/dl/$GOVERSION.linux-${{ env.GO_ARCHITECTURE }}.tar.gz
           sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf $GOVERSION.linux-${{ env.GO_ARCHITECTURE }}.tar.gz
           PATH="$PATH:/usr/local/go/bin"
@@ -157,7 +157,7 @@ jobs:
         if: ${{ always() }}
         run: |
           make kind-cluster-delete
-          export OIDC_IAM_ROLE=arn:aws:iam:::role/IrsaTestingRole-slimruu-us-east-1
+          export OIDC_IAM_ROLE=arn:aws:iam::284386129350:role/IrsaTestingRole-slimruu-us-east-1
           export OIDC_S3_BUCKET_NAME=aws-privateca-issuer-irsa-slimruu-us-east-1
           echo OIDC_IAM_ROLE=$OIDC_IAM_ROLE >> $GITHUB_ENV
           echo OIDC_S3_BUCKET_NAME=$OIDC_S3_BUCKET_NAME >> $GITHUB_ENV
@@ -221,7 +221,7 @@ jobs:
       - name: Setup AWS Credentials
         uses: aws-actions/configure-aws-credentials@master
         with:
-          role-to-assume: arn:aws:iam:::role/GithubActionsTestingRole-slimruu-us-east-1
+          role-to-assume: arn:aws:iam::284386129350:role/GithubActionsTestingRole-slimruu-us-east-1
           aws-region: us-east-1
       - name: Setup AWS Region
         run: |
