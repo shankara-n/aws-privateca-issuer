@@ -45,33 +45,11 @@ helm install awspca/aws-privateca-issuer --generate-name \
 ```
 ## Configuration
 
-### AWS Authentication
+As of now, the only configurable settings are access to AWS. So you can use `AWS_REGION`, `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY`.
 
-You can configure AWS authentication in the following ways:
+Alternatively, you can supply arbitrary secrets for the access and secret keys with the `accessKeyIDSelector` and `secretAccessKeySelector` fields in the clusterissuer and/or issuer manifests.
 
-* Using environment variables: `AWS_REGION`, `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY`
-* Using Kubernetes secrets: Supply arbitrary secrets for the access and secret keys with the `accessKeyIDSelector` and `secretAccessKeySelector` fields in the issuer manifests
-* Using EC2 instance roles
-* Using [IAM Roles for Service Accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
-
-### Cross-Account Access
-
-AWS PCA Issuer supports assuming an IAM role per issuer to access AWS Private CAs in different AWS accounts. This is useful for multi-account architectures where Private CAs are hosted in separate accounts from the Kubernetes clusters.
-
-To use this feature, specify the IAM role ARN in the `role` field of your issuer:
-
-```yaml
-apiVersion: awspca.cert-manager.io/v1beta1
-kind: AWSPCAClusterIssuer
-metadata:
-  name: cross-account-issuer
-spec:
-  arn: arn:aws:acm-pca:us-west-2:123456789012:certificate-authority/12345678-1234-1234-1234-123456789012
-  region: us-west-2
-  role: arn:aws:iam::123456789012:role/pca-issuer-role
-```
-
-For more details on setting up cross-account access, see the [Multi-Account Setup Guide](docs/multi-account-setup.md).
+Access to AWS can also be configured using an EC2 instance role or [IAM Roles for Service Accounts] (https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html).
 
 A minimal policy to use the issuer with an authority would look like follows:
 
@@ -145,7 +123,7 @@ AWS Private Certificate Authority(PCA) Issuer Plugin supports the following inte
     * [End-to-End TLS encryption on Amazon Elastic Kubernetes Service](https://aws.amazon.com/blogs/containers/setting-up-end-to-end-tls-encryption-on-amazon-eks-with-the-new-aws-load-balancer-controller/)(Amazon EKS).
     * [TLS-enabled Kubernetes clusters with AWS Private CA and Amazon EKS](https://aws.amazon.com/blogs/security/tls-enabled-kubernetes-clusters-with-acm-private-ca-and-amazon-eks-2/)
     * Cross Account CA sharing with supported Cross Account templates
-    * [Supported PCA Certificate Templates](https://docs.aws.amazon.com/acm-pca/latest/userguide/UsingTemplates.html#template-varieties): CodeSigningCertificate/V1; EndEntityClientAuthCertificate/V1; EndEntityServerAuthCertificate/V1; OCSPSigningCertificate/V1; EndEntityCertificate/V1; BlankEndEntityCertificate_CSRPassthrough/V1
+    * [Supported PCA Certificate Templates](https://docs.aws.amazon.com/acm-pca/latest/userguide/UsingTemplates.html#template-varieties): CodeSigningCertificate/V1; EndEntityClientAuthCertificate/V1; EndEntityServerAuthCertificate/V1; OCSPSigningCertificate/V1; EndEntityCertificate/V1; BlankEndEntityCertificate_APICSRPassthrough/V1
 
 
 ## Mapping Cert-Manager Usage Types to AWS PCA Template Arns
@@ -162,7 +140,7 @@ This table shows how the UsageTypes are being translated into which template to 
 | ServerAuth                 | acm-pca:::template/EndEntityServerAuthCertificate/V1             |
 | OCSPSigning                | acm-pca:::template/OCSPSigningCertificate/V1                     |
 | ClientAuth, ServerAuth     | acm-pca:::template/EndEntityCertificate/V1                       |
-| Everything Else            | acm-pca:::template/BlankEndEntityCertificate_CSRPassthrough/V1   |
+| Everything Else            | acm-pca:::template/BlankEndEntityCertificate_APICSRPassthrough/V1   |
 
 ## Understanding/Running the tests
 
