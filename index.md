@@ -13,7 +13,7 @@
 
 
 > [!TIP]
-> Amazon EKS supports AWS Private CA Issuer as an EKS Add-on named "aws-privateca-connector-for-kubernetes'. This simplifies installation and configuration for EKS users. See <a href="https://docs.aws.amazon.com/eks/latest/userguide/workloads-add-ons-available-eks.html#add-ons-aws-privateca-connector">AWS add-ons</ulink> for more information.
+> Amazon Elastic Kubernetes Service (EKS) supports AWS Private CA Issuer as an EKS Add-on named `aws-privateca-connector-for-kubernetes`. This simplifies installation and configuration for EKS users. See <a href="https://docs.aws.amazon.com/eks/latest/userguide/workloads-add-ons-available-eks.html#add-ons-aws-privateca-connector">AWS add-ons</ulink> for more information.
 
 AWS Private CA is an AWS service that can setup and manage private CAs, as well as issue private certificates.
 
